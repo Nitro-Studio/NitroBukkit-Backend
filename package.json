@@ -1,0 +1,19 @@
+{
+  "name": "nitrobukkit-backend",
+  "version": "1.0.0",
+  "description": "Node.js backend software for NitroBukkit",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nitro-Studio/NitroBukkit-Backend.git"
+  },
+  "author": "Nitro-Studio",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Nitro-Studio/NitroBukkit-Backend/issues"
+  },
+  "homepage": "https://github.com/Nitro-Studio/NitroBukkit-Backend#readme"
+}
