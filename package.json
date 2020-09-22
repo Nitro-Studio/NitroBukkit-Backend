@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Nitro-Studio/NitroBukkit-Backend/issues"
   },
-  "homepage": "https://github.com/Nitro-Studio/NitroBukkit-Backend#readme"
+  "homepage": "https://github.com/Nitro-Studio/NitroBukkit-Backend#readme",
+  "dependencies": {
+    "properties-reader": "^2.1.1"
+  }
 }
