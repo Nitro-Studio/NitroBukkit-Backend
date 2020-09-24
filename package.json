@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Nitro-Studio/NitroBukkit-Backend#readme",
   "dependencies": {
     "axios": "^0.20.0",
+    "collections": "^5.1.11",
     "properties-reader": "^2.1.1"
   }
 }
