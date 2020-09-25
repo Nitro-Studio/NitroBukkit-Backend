@@ -27,8 +27,8 @@ if (config.ssl) {
         cert: fs.readFileSync(config.cert),
         key: fs.readFileSync(config.key)
     }, app).listen(serverPort, () => {
-        console.log(`Server open at port ${serverPort} (https).`)
-    })
+        console.log(`Server open at port ${serverPort} (https).`);
+    });
 } else {
     server = http.createServer(app).listen(serverPort, () => {
         console.log(`Server open at port ${serverPort} (http),`);
@@ -36,16 +36,16 @@ if (config.ssl) {
 }
 
 const hashes = new Set();
-const ports = new Map({
-    server: serverPort
-});
+const ports = new Map();
 const listeners = new Map();
 const servers = new Map();
 const directories = new Map();
 
 const ws = SocketIO(server, {
     path: '/socket'
-})
+});
+
+ports.set("server", serverPort);
 
 ws.on('connection', (socket) => {
     socket.on('disconnect', () => {
@@ -53,7 +53,7 @@ ws.on('connection', (socket) => {
             if (value.has(socket)) {
                 value.delete(socket);
             }
-        })
+        });
     });
     socket.on('create', (data) => {
         const name = data.name;
@@ -118,7 +118,7 @@ ws.on('connection', (socket) => {
                 if (error) {
                     socket.emit('err', {
                         "reason": "Unable to open log"
-                    })
+                    });
                 } else {
                     data.split(/\r\n|\n/).forEach((str) => {
                         if (str && !/^\s*$/.test(str)) {
