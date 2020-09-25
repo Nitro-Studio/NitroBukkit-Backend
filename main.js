@@ -14,7 +14,7 @@ const generateChecksum = require('./lib/common').generateChecksum;
 const startPaper = require('./lib/minecraft/paper').startPaper;
 const startSpigot = require('./lib/minecraft/spigot').startSpigot;
 const config = require('./config.json');
-const port = config.port;
+const serverPort = config.port;
 
 const app = express();
 app.use(express.static(path.join(process.cwd(), "public"), {
@@ -26,17 +26,19 @@ if (config.ssl) {
     server = https.createServer({
         cert: fs.readFileSync(config.cert),
         key: fs.readFileSync(config.key)
-    }, app).listen(port, () => {
-        console.log(`Server open at port ${port} (https).`)
+    }, app).listen(serverPort, () => {
+        console.log(`Server open at port ${serverPort} (https).`)
     })
 } else {
-    server = http.createServer(app).listen(port, () => {
-        console.log(`Server open at port ${port} (http),`);
+    server = http.createServer(app).listen(serverPort, () => {
+        console.log(`Server open at port ${serverPort} (http),`);
     });
 }
 
 const hashes = new Set();
-const ports = new Set([port]);
+const ports = new Map({
+    server: serverPort
+});
 const listeners = new Map();
 const servers = new Map();
 const directories = new Map();
@@ -60,7 +62,7 @@ ws.on('connection', (socket) => {
         const memory = data.memory;
         const type = data.type;
         const checksum = generateChecksum(`${name}${version}${type}`).substring(0, 6);
-        if (ports.has(port) || hashes.has(checksum)) {
+        if (ports.values().toArray().has(port) || hashes.has(checksum)) {
             socket.emit('err', {
                 "reason": "Duplicate configuration"
             });
@@ -72,8 +74,6 @@ ws.on('connection', (socket) => {
                     startPaper(name, version, port, memory, checksum, addServer, listenServer, closedServer, failedServer);
                     break;
                 case 'spigot':
-                    hashes.add(checksum);
-                    listeners.set(checksum, new Set([socket]));
                     startSpigot(name, version, port, memory, checksum, addServer, listenServer, closedServer, failedServer);
                     break;
                 default:
@@ -82,6 +82,9 @@ ws.on('connection', (socket) => {
                     });
                     return;
             }
+            hashes.add(checksum);
+            listeners.set(checksum, new Set([socket]));
+            ports.set(checksum, port);
             socket.emit('init', {
                 "hash": checksum
             });
@@ -146,6 +149,8 @@ const closedServer = (hash) => {
     });
     listeners.delete(hash);
     servers.delete(hash);
+    ports.delete(hash);
+    directories.delete(hash);
 }
 
 const listenServer = (hash, message) => {
@@ -167,4 +172,5 @@ const failedServer = (hash) => {
         });
     });
     listeners.delete(hash);
+    ports.delete(hash);
 }
