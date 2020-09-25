@@ -31,7 +31,7 @@ if (config.ssl) {
     });
 } else {
     server = http.createServer(app).listen(serverPort, () => {
-        console.log(`Server open at port ${serverPort} (http),`);
+        console.log(`Server open at port ${serverPort} (http).`);
     });
 }
 
@@ -77,10 +77,9 @@ ws.on('connection', (socket) => {
                     startSpigot(name, version, port, memory, checksum, addServer, listenServer, closedServer, failedServer);
                     break;
                 default:
-                    socket.emit('err', {
+                    return socket.emit('err', {
                         "reason": `Unknown ${type}`
                     });
-                    return;
             }
             hashes.add(checksum);
             listeners.set(checksum, new Set([socket]));
