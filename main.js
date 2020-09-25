@@ -6,8 +6,6 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 
-const Map = require("collections/map");
-const Set = require("collections/set");
 const SocketIO = require('socket.io');
 
 const generateChecksum = require('./lib/common').generateChecksum;
@@ -62,15 +60,13 @@ ws.on('connection', (socket) => {
         const memory = data.memory;
         const type = data.type;
         const checksum = generateChecksum(`${name}${version}${type}`).substring(0, 6);
-        if (ports.values().toArray().has(port) || hashes.has(checksum)) {
+        if (Array.from(ports.values()).has(port) || hashes.has(checksum)) {
             socket.emit('err', {
                 "reason": "Duplicate configuration"
             });
         } else {
             switch(type) {
                 case 'paper':
-                    hashes.add(checksum);
-                    listeners.set(checksum, new Set([socket]));
                     startPaper(name, version, port, memory, checksum, addServer, listenServer, closedServer, failedServer);
                     break;
                 case 'spigot':

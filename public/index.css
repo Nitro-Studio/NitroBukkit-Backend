@@ -1,7 +1,3 @@
-input {
-    width: 1000px;
-}
-
 #console {
     overflow-x: hidden;
     overflow-y: scroll;
@@ -12,4 +8,16 @@ input {
 
 .notice {
     background-color: silver;
+}
+
+* {
+    margin: 5px;
+}
+
+input {
+    width: 900px;
+}
+
+button {
+    width: 80px;
 }
