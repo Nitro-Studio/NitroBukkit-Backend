@@ -1,5 +1,5 @@
 {
-    "port": 80,
+    "port": 8010,
     "ssl": false,
     "cert": "SSL_CERT_HERE",
     "key": "SSL_KEY_HERE",

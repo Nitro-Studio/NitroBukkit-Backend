@@ -14,10 +14,23 @@ const startSpigot = require('./lib/minecraft/spigot').startSpigot;
 const config = require('./config.json');
 const serverPort = config.port;
 
+const qrcode = require('qrcode-terminal');
+
 const app = express();
 app.use(express.static(path.join(process.cwd(), "public"), {
     index: config.index
 }));
+
+
+let localip;
+const os = require('os');
+for (let addresses of Object.values(os.networkInterfaces())) {
+    for (let add of addresses) {
+        if (add.address.startsWith('192.168.')) {
+            localip = add.address;
+        }
+    }
+}
 
 let server;
 if (config.ssl) {
@@ -26,10 +39,16 @@ if (config.ssl) {
         key: fs.readFileSync(config.key)
     }, app).listen(serverPort, () => {
         console.log(`Server open at port ${serverPort} (https).`);
+        qrcode.generate(`https://${localip}:${serverPort}`, function (qrcode) {
+            console.log(qrcode);
+        });
     });
 } else {
     server = http.createServer(app).listen(serverPort, () => {
         console.log(`Server open at port ${serverPort} (http),`);
+    });
+    qrcode.generate(`http://${localip}:${serverPort}`, function (qrcode) {
+        console.log(qrcode);
     });
 }
 
@@ -65,7 +84,7 @@ ws.on('connection', (socket) => {
                 "reason": "Duplicate configuration"
             });
         } else {
-            switch(type) {
+            switch (type) {
                 case 'paper':
                     startPaper(name, version, port, memory, checksum, addServer, listenServer, closedServer, failedServer);
                     break;
