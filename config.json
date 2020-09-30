@@ -1,8 +1,9 @@
 {
     "port": 8010,
     "ssl": false,
-    "cert": "SSL_CERT_HERE",
-    "key": "SSL_KEY_HERE",
+    "fqdn": "FQDN_HERE (OPTIONAL, IPv4 ACCEPTED)",
+    "ssl_cert": "SSL_CERT_HERE (REQUIRED WHEN SSL TRUE)",
+    "ssl_key": "SSL_KEY_HERE (REQUIRED WHEN SSL TRUE)",
     "index": [
         "index.html"
     ]

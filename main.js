@@ -4,7 +4,9 @@ const express = require('express');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
+const os = require('os');
 const path = require('path');
+const qrcode = require('qrcode-terminal');
 
 const SocketIO = require('socket.io');
 
@@ -14,57 +16,89 @@ const startSpigot = require('./lib/minecraft/spigot').startSpigot;
 const config = require('./config.json');
 const serverPort = config.port;
 
-const qrcode = require('qrcode-terminal');
-
+/**
+ * Create express app
+ */
 const app = express();
 app.use(express.static(path.join(process.cwd(), "public"), {
     index: config.index
 }));
 
-
+/**
+ * Find local ip address from os network interfaces
+ */
+const ipRegex = /(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)/g
 let localip;
-const os = require('os');
-for (let addresses of Object.values(os.networkInterfaces())) {
-    for (let add of addresses) {
-        if (add.address.startsWith('192.168.')) {
-            localip = add.address;
+for (let interfaces of Object.values(os.networkInterfaces())) {
+    for (let interface of interfaces) {
+        if (ipRegex.test(interface.address)) {
+            localip = interface.address;
         }
     }
 }
 
+/**
+ * Default domain configuration. Uses local ip when no fqdn specified.
+ */
+let domain = fs.readFileSync(config.fqdn);
+let useDomain = false;
+if (/^([^.]+\.)+([^.]+)$/g.test(domain)) {
+    useDomain = true;
+} else {
+    domain = localip;
+}
+
 let server;
 if (config.ssl) {
+    /**
+     * Start https server configuration (requires ssl_cert, ssl_key)
+     */
     server = https.createServer({
-        cert: fs.readFileSync(config.cert),
-        key: fs.readFileSync(config.key)
+        cert: fs.readFileSync(config.ssl_cert),
+        key: fs.readFileSync(config.ssl_key)
     }, app).listen(serverPort, () => {
         console.log(`Server open at port ${serverPort} (https).`);
-        qrcode.generate(`https://${localip}:${serverPort}`, function (qrcode) {
+        qrcode.generate(`https://${domain}:${serverPort}`, (qrcode) => {
             console.log(qrcode);
         });
     });
 } else {
+    /**
+     * Start http server configuration
+     */
     server = http.createServer(app).listen(serverPort, () => {
         console.log(`Server open at port ${serverPort} (http),`);
     });
-    qrcode.generate(`http://${localip}:${serverPort}`, function (qrcode) {
+    qrcode.generate(`http://${domain}:${serverPort}`, (qrcode) => {
         console.log(qrcode);
     });
 }
 
+/**
+ * Collections for servers (hash, port, listener, server, directory)
+ */
 const hashes = new Set();
 const ports = new Map();
 const listeners = new Map();
 const servers = new Map();
 const directories = new Map();
 
+ports.set("server", serverPort);
+
+/**
+ * New websocket server
+ */
 const ws = SocketIO(server, {
     path: '/socket'
 });
 
-ports.set("server", serverPort);
-
+/**
+ * Start listening from clients
+ */
 ws.on('connection', (socket) => {
+    /**
+     * On Disconnect
+     */
     socket.on('disconnect', () => {
         listeners.forEach((value) => {
             if (value.has(socket)) {
@@ -72,6 +106,10 @@ ws.on('connection', (socket) => {
             }
         });
     });
+    
+    /**
+     * Create new server (param: name, version, port, memory, type)
+     */
     socket.on('create', (data) => {
         const name = data.name;
         const version = data.version;
@@ -105,18 +143,30 @@ ws.on('connection', (socket) => {
             });
         }
     });
+
+    /**
+     * Subscribe to server (param: hash)
+     */
     socket.on('subscribe', (data) => {
         const hash = data.hash;
         if (listeners.has(hash)) {
             listeners.get(hash).add(socket);
         }
     });
+    
+    /**
+     * Unsubscribe from server (param: hash)
+     */
     socket.on('unsubscribe', (data) => {
         const hash = data.hash;
         if (listeners.has(hash)) {
             listeners.get(hash).delete(socket);
         }
     });
+    
+    /**
+     * Send message to server (param: hash, message)
+     */
     socket.on('send', (data) => {
         const hash = data.hash;
         const message = data.message;
@@ -124,6 +174,10 @@ ws.on('connection', (socket) => {
             servers.get(hash).stdin.write(`${message}\n`);
         }
     });
+    
+    /**
+     * Get server log (param: hash)
+     */
     socket.on('log', (data) => {
         const hash = data.hash;
         if (directories.has(hash)) {
@@ -149,11 +203,23 @@ ws.on('connection', (socket) => {
     });
 });
 
+/**
+ * Call when server's init progress started.
+ * 
+ * @param {String} hash server's hash
+ * @param {import('child_process').ChildProcess} child server's child process
+ * @param {String} logDirectory server's log directory
+ */
 const addServer = (hash, child, logDirectory) => {
     servers.set(hash, child);
     directories.set(hash, logDirectory);
 }
 
+/**
+ * Call when the server has closed.
+ * 
+ * @param {String} hash server's hash 
+ */
 const closedServer = (hash) => {
     console.log(`Closed: ${hash}`);
     hashes.delete(hash);
@@ -168,6 +234,12 @@ const closedServer = (hash) => {
     directories.delete(hash);
 }
 
+/**
+ * Call when new message needs to be announced.
+ * 
+ * @param {String} hash server's hash
+ * @param {String} messages message to be announced
+ */
 const listenServer = (hash, message) => {
     console.log(`${hash}: ${message}`);
     listeners.get(hash).forEach((socket) => {
@@ -178,6 +250,11 @@ const listenServer = (hash, message) => {
     });
 }
 
+/**
+ * Call when failed to initialize server
+ * 
+ * @param {String} hash server's hash
+ */
 const failedServer = (hash) => {
     console.log(`Failed: ${hash}`);
     hashes.delete(hash);
