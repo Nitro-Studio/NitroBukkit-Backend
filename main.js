@@ -30,9 +30,9 @@ app.use(express.static(path.join(process.cwd(), "public"), {
 const ipRegex = /(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)/g
 let localip;
 for (let interfaces of Object.values(os.networkInterfaces())) {
-    for (let interface of interfaces) {
-        if (ipRegex.test(interface.address)) {
-            localip = interface.address;
+    for (let network of interfaces) {
+        if (ipRegex.test(network.address)) {
+            localip = network.address;
         }
     }
 }
@@ -40,7 +40,7 @@ for (let interfaces of Object.values(os.networkInterfaces())) {
 /**
  * Default domain configuration. Uses local ip when no fqdn specified.
  */
-let domain = fs.readFileSync(config.fqdn);
+let domain = config.fqdn;
 let useDomain = false;
 if (/^([^.]+\.)+([^.]+)$/g.test(domain)) {
     useDomain = true;
