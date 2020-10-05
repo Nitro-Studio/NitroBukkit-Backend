@@ -20,7 +20,8 @@ const serverPort = config.port;
  * Create express app
  */
 const app = express();
-app.use(express.static(path.join(process.cwd(), "public"), {
+var cors = require('cors');
+app.use(cors({ credentials: true, origin: 'http://localhost:3000' }), express.static(path.join(process.cwd(), "public"), {
     index: config.index
 }));
 
@@ -70,6 +71,7 @@ if (config.ssl) {
         console.log(`Server open at port ${serverPort} (http),`);
     });
     qrcode.generate(`http://${domain}:${serverPort}`, (qrcode) => {
+        console.log(`http://${domain}:${serverPort}`);
         console.log(qrcode);
     });
 }
@@ -106,7 +108,7 @@ ws.on('connection', (socket) => {
             }
         });
     });
-    
+
     /**
      * Create new server (param: name, version, port, memory, type)
      */
@@ -117,6 +119,7 @@ ws.on('connection', (socket) => {
         const memory = data.memory;
         const type = data.type;
         const checksum = generateChecksum(`${name}${version}${type}`).substring(0, 6);
+        console.log(`${name} ${version} ${port} ${memory} ${type} ${checksum}`);
         if (Array.from(ports.values()).has(port) || hashes.has(checksum)) {
             socket.emit('err', {
                 "reason": "Duplicate configuration"
@@ -153,7 +156,7 @@ ws.on('connection', (socket) => {
             listeners.get(hash).add(socket);
         }
     });
-    
+
     /**
      * Unsubscribe from server (param: hash)
      */
@@ -163,7 +166,7 @@ ws.on('connection', (socket) => {
             listeners.get(hash).delete(socket);
         }
     });
-    
+
     /**
      * Send message to server (param: hash, message)
      */
@@ -174,7 +177,7 @@ ws.on('connection', (socket) => {
             servers.get(hash).stdin.write(`${message}\n`);
         }
     });
-    
+
     /**
      * Get server log (param: hash)
      */

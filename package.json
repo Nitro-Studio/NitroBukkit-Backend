@@ -20,6 +20,7 @@
   "dependencies": {
     "axios": "^0.20.0",
     "collections": "^5.1.11",
+    "cors": "^2.8.5",
     "express": "^4.17.1",
     "properties-reader": "^2.1.1",
     "qrcode-terminal": "^0.12.0",
