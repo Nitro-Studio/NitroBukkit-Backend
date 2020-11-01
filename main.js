@@ -68,7 +68,7 @@ if (config.ssl) {
      * Start http server configuration
      */
     server = http.createServer(app).listen(serverPort, () => {
-        console.log(`Server open at port ${serverPort} (http),`);
+        console.log(`Server open at port ${serverPort} (http).`);
     });
     qrcode.generate(`http://${domain}:${serverPort}`, (qrcode) => {
         console.log(`http://${domain}:${serverPort}`);
@@ -133,10 +133,9 @@ ws.on('connection', (socket) => {
                     startSpigot(name, version, port, memory, checksum, addServer, listenServer, closedServer, failedServer);
                     break;
                 default:
-                    socket.emit('err', {
+                    return socket.emit('err', {
                         "reason": `Unknown ${type}`
                     });
-                    return;
             }
             hashes.add(checksum);
             listeners.set(checksum, new Set([socket]));
